@@ -16,3 +16,36 @@
 .reading-tools{margin:16px 0;padding:15px;border:1px solid var(--line);border-radius:9px;background:var(--surface2)}.reading-tools .topline{border:0;padding:0;margin:0}.reading-tools p{margin:8px 0 0}.read-field{padding:12px;border:1px solid var(--line);border-radius:9px;margin:10px 0;background:var(--surface2)}.read-field>label,.read-note-choice{display:flex;align-items:center;gap:9px}.read-field>label input,.read-note-choice input{width:16px;height:16px;min-height:0;margin:0;accent-color:var(--accent)}.read-field select{font-size:11px;margin:8px 0}.read-field small{font-size:10px;display:block;margin-top:6px}.ocr-text{margin:18px 0}.ocr-text summary{cursor:pointer;font-weight:650;color:var(--muted);padding:10px 0}.ocr-text textarea{font-size:11px;line-height:1.6;margin-bottom:10px}#reading-fields .grid{gap:0 12px}#reading-dialog{max-width:900px}
 /* Fase 4: marcador de DDA próprio, sem misturar com contas/comissões. */
 :root{--dda:#277e93;--dda-soft:#e8f5f8}:root[data-theme=dark]{--dda:#80c9d9;--dda-soft:#20353c}.dda-card h2,.dda-card h3{color:var(--dda)}.dda-pill{color:var(--dda);background:var(--dda-soft)}.dda-button{background:var(--dda);color:var(--surface)}.dda-event{background:var(--dda-soft);color:var(--dda);border-left-color:var(--dda)}#import-review .card{margin:10px 0}#import-mapping{margin-top:20px}#import-review label input{accent-color:var(--dda)}
+
+/* Ajuste de legibilidade: textos maiores no computador e celular. */
+body{font-size:16px;line-height:1.6}
+:root{--sidebar:246px}
+.brand strong{font-size:19px}.brand small{font-size:12px}
+.header-actions button,.theme-choice,.theme-choice select{font-size:13px}
+.sidebar-heading{font-size:11px}.sidebar nav button{font-size:13px;min-height:43px;line-height:1.4}.nav-count{font-size:12px}
+.sidebar-foot{font-size:12px}.sidebar-foot div{font-size:11px}
+.workspace-tools p{font-size:13px}.workspace-tools button{font-size:13px;min-height:38px}
+.page-heading h1{font-size:29px}.page-heading .eyebrow{font-size:11px}.page-heading .muted{font-size:14px}.page-heading>button{font-size:14px;min-height:42px}
+label,.field-caption{font-size:14px}input,select,textarea,label input,label select,label textarea{font-size:16px;min-height:44px}
+.search-wrap label{font-size:12px}.search-wrap input{font-size:16px;min-height:44px}
+.finance-controls label{font-size:13px}.finance-controls input,.finance-controls select{font-size:15px;min-height:42px}.finance-controls button{font-size:14px;min-height:42px}
+.stat small{font-size:13px}.stat strong{font-size:27px}.stat .muted{font-size:12px}
+.record h2{font-size:18px}.record p,.muted{font-size:14px}.money{font-size:27px}
+.pill{font-size:12px;line-height:1.4;padding:4px 8px}.actions button{font-size:13px;min-height:40px;padding:9px 11px}
+.account-table{font-size:14px}.account-table th{font-size:12px;padding:13px 14px}.account-table td{font-size:14px;padding:14px}.account-table td:first-child strong{font-size:14px}.account-table td small{font-size:12px;line-height:1.5}.account-table .table-money{font-size:16px}.account-table td:before{font-size:12px}
+.table-actions summary{font-size:13px;min-height:36px;padding:7px 10px}.table-actions button{font-size:13px}
+.hint,#notice,.legend{font-size:13px}.eyebrow{font-size:11px}.content-footer{font-size:12px}
+dialog h2{font-size:21px}.checklist-panel label{font-size:15px}.check-grid label{font-size:14px}.document-row p{font-size:14px}.document-row small{font-size:12px}
+.weekday{font-size:13px}.day>strong{font-size:14px}.holiday{font-size:12px}.calendar-event{font-size:12px;line-height:1.5;padding:7px 8px}.today-strip h3{font-size:16px}.today-strip p{font-size:14px}
+.attachment-buttons button{font-size:14px;min-height:44px}.attachment-picker .muted{font-size:13px}.attachment-picker>button{font-size:13px;min-height:40px}
+.reading-tools p,.read-field small{font-size:13px}.read-field select{font-size:14px}.ocr-text textarea{font-size:14px}#daily-summary-content button{font-size:14px}
+#login p{font-size:15px}#login .eyebrow{font-size:11px}
+@media(max-width:850px){.brand strong{font-size:17px}.header-actions button{font-size:12px}.sidebar nav button{font-size:13px;min-height:42px}.workspace-tools p{font-size:12px}.workspace-tools button{font-size:13px}.page-heading h1{font-size:26px}.page-heading .muted{font-size:13px}.stat strong{font-size:25px}}
+@media(max-width:600px){.page-heading .muted{font-size:13px}.page-heading>button{font-size:13px;min-height:42px}.stat small{font-size:12px}.stat strong{font-size:24px}.finance-controls label{font-size:13px}.finance-controls input,.finance-controls select{font-size:16px;min-height:44px}.account-table td{font-size:14px;padding:10px 0}.account-table td:first-child strong{font-size:16px}.account-table td:before{font-size:12px}.account-table .table-money{font-size:17px}.record p{font-size:14px}.record h2{font-size:18px}.attachment-buttons button{font-size:14px}.content-footer{font-size:11px}.pill{font-size:12px}dialog{padding:18px}.actions button{min-height:42px}}
+
+/* Fase 5: leitura do histórico e previsão no celular. */
+.audit-details { width:100%; margin-top:12px; }
+.audit-details summary { cursor:pointer; font-size:15px; padding:10px 0; }
+.audit-details td { white-space:pre-wrap; overflow-wrap:anywhere; max-width:340px; vertical-align:top; }
+#phase5-export-progress { font-size:15px; font-weight:600; }
+@media (max-width:700px) { .audit-details td { max-width:none; } }
