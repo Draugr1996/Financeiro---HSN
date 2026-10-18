@@ -1,9 +1,9 @@
 /* Financeiro HSN · Fase 3. Contas e comissões permanecem separadas. */
 'use strict';
 const $=id=>document.getElementById(id);
-const titles={suppliers:'Fornecedores',account_types:'Tipos de conta',message_templates:'Mensagens prontas',payables:'Contas a pagar',recurring_models:'Contas recorrentes',calendar:'Calendário',local_holidays:'Feriados locais',alerts:'Alertas de contas',commissions:'Comissões',commission_alerts:'Alertas de comissões',alert_settings:'Configurações de alertas',dda:'DDA',imports:'Importar / exportar',reports:'Relatórios',cash_forecast:'Previsão de caixa',audit:'Histórico de alterações',adjustments:'Reajustes de contrato',backups:'Backups'};
+const titles={suppliers:'Fornecedores',account_types:'Tipos de conta',message_templates:'Mensagens prontas',payables:'Contas a pagar',recurring_models:'Contas recorrentes',calendar:'Calendário',local_holidays:'Feriados locais',alerts:'Alertas de contas',commissions:'Comissões',commission_alerts:'Alertas de comissões',alert_settings:'Configurações de alertas',dda:'DDA',imports:'Importar / exportar',reports:'Relatórios',cash_forecast:'Previsão de caixa',audit:'Histórico de alterações',adjustments:'Reajustes de contrato',backups:'Backups',push:'Notificações no telefone'};
 const supplierFields=[['legal_name','Razão social / nome completo',true],['trade_name','Nome fantasia'],['tax_id','CNPJ / CPF (opcional)'],['service_type','Tipo de serviço'],['postal_code','CEP'],['street','Logradouro'],['address_number','Número'],['complement','Complemento'],['neighborhood','Bairro'],['city','Cidade'],['state','UF'],['bank','Banco'],['bank_branch','Agência'],['bank_account','Conta'],['pix_key','Chave PIX'],['notes','Observações']];
-let db=null,user=null,view='payables',rows=[],templates=[],editing=null,waSupplier=null,busy=false,loadToken=0,installPrompt=null;
+let db=null,user=null,view=HSN_PUSH.initialView(),rows=[],templates=[],editing=null,waSupplier=null,busy=false,loadToken=0,installPrompt=null;
 function notice(message='',error=false){$('notice').textContent=message;$('notice').className=error?'error':'';}
 function connected(){ $('connection').textContent=navigator.onLine?'Conectado · dados no Supabase':'Sem internet · conecte-se para consultar ou salvar'; }
 function failure(error){notice(error?.message||'Não foi possível concluir. Verifique a conexão.',true);}
@@ -88,7 +88,7 @@ $('wa-fill').onclick=()=>{const template=templates.find(t=>t.id===$('wa-template
 $('wa-contact').onchange=updateWhatsApp;
 $('wa-open').onclick=()=>{const c=waSupplier?.contacts[Number($('wa-contact').value)],info=HSN_UTILS.whatsappNumber(c?.whatsapp);if(!info.valid)return;const url='https://wa.me/'+info.number+'?text='+encodeURIComponent($('wa-text').value);window.open(url,'_blank','noopener,noreferrer');};
 $('login-form').onsubmit=event=>{event.preventDefault();operation(async()=>{if(!db)throw new Error('Confira js/config.js e a conexão com o CDN.');const data=check(await db.auth.signInWithPassword({email:HSN_CONFIG.loginEmail,password:$('password').value}));$('password').value='';await acceptSession(data.session);notice('');});};
-$('logout').onclick=()=>operation(async()=>{check(await db.auth.signOut());resetPrivate();notice('Sessão encerrada.');});
+$('logout').onclick=()=>operation(async()=>{await HSN_PUSH.beforeLogout();check(await db.auth.signOut());resetPrivate();notice('Sessão encerrada.');});
 $('refresh').onclick=load;$('search').oninput=render;$('new').onclick=()=>openEditor();$('close-editor').onclick=()=>{if(!busy)$('editor').close();};$('edit-form').onsubmit=save;
 $('editor').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(busy)return;view=b.dataset.view;$('search').value='';load();});
