@@ -1,6 +1,6 @@
 // Somente arquivos estáticos. Nunca cachear Auth, API, documentos ou CDN.
-const CACHE='hsn-shell-v6-push';
-const SHELL=['./','./index.html','./css/style.css','./js/config.js','./js/theme.js','./js/utils.js','./js/app.js','./js/finance.js','./js/import-rules.js','./js/phase4.js','./js/planning-engine.js','./js/phase5.js','./js/push-engine.js','./js/push.js','./js/attachments.js','./js/document-parser.js','./js/ocr-reader.js','./js/document-reading.js','./js/alerts-engine.js','./js/phase3.js','./js/dates.js','./js/boletos.js','./manifest.json','./icons/icon-192.png','./icons/icon-512.png','./icons/badge-96.png'];
+const CACHE='hsn-shell-v6-layout-1';
+const SHELL=['./','./index.html','./css/style.css','./css/layout.css','./js/layout.js','./js/config.js','./js/theme.js','./js/utils.js','./js/app.js','./js/finance.js','./js/import-rules.js','./js/phase4.js','./js/planning-engine.js','./js/phase5.js','./js/push-engine.js','./js/push.js','./js/attachments.js','./js/document-parser.js','./js/ocr-reader.js','./js/document-reading.js','./js/alerts-engine.js','./js/phase3.js','./js/dates.js','./js/boletos.js','./manifest.json','./icons/icon-192.png','./icons/icon-512.png','./icons/badge-96.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL))));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('hsn-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
