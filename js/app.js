@@ -1,8 +1,30 @@
 /* Financeiro HSN · Fase 3. Contas e comissões permanecem separadas. */
 'use strict';
 const $=id=>document.getElementById(id);
-const titles={suppliers:'Fornecedores',account_types:'Tipos de conta',message_templates:'Mensagens prontas',payables:'Contas a pagar',recurring_models:'Contas recorrentes',calendar:'Calendário',local_holidays:'Feriados locais',alerts:'Alertas de contas',commissions:'Comissões',commission_alerts:'Alertas de comissões',alert_settings:'Configurações de alertas',dda:'DDA',imports:'Importar / exportar',reports:'Relatórios',cash_forecast:'Previsão de caixa',audit:'Histórico de alterações',adjustments:'Reajustes de contrato',backups:'Backups',push:'Notificações no telefone'};
+const titles={dashboard:'Seu painel',suppliers:'Fornecedores',account_types:'Tipos de conta',message_templates:'Mensagens prontas',payables:'Contas a pagar',recurring_models:'Contas recorrentes',calendar:'Calendário',local_holidays:'Feriados locais',alerts:'Alertas de contas',commissions:'Comissões',commission_alerts:'Alertas de comissões',alert_settings:'Configurações de alertas',dda:'DDA',imports:'Importar / exportar',reports:'Relatórios',cash_forecast:'Previsão de caixa',audit:'Histórico de alterações',adjustments:'Reajustes de contrato',backups:'Backups',push:'Notificações no telefone',zoho_connect:'Conexão Zoho Mail',sicoob_collections:'Cobranças Sicoob'};
+
+/* Sugestões opcionais; usuários escolhem quais cadastrar. Nunca renomeia tipos existentes. */
+const recommendedTypes=[
+ ['Energia elétrica','#f59e0b'],['Água e esgoto','#0ea5e9'],['Internet e telefonia','#6366f1'],
+ ['Aluguel e condomínio','#8b5cf6'],['Manutenção','#f97316'],['Limpeza e lavanderia','#10b981'],
+ ['Materiais e suprimentos','#14b8a6'],['Serviços terceirizados','#3b82f6'],
+ ['Impostos e taxas','#ef4444'],['Administrativo','#64748b'],['Outros','#94a3b8']
+];
+async function addRecommendedTypes(){
+ if(busy)return;
+ await operation(async()=>{
+  const existing=check(await db.from('account_types').select('*').eq('owner_id',user.id));
+  const old=new Set(existing.map(t=>HSN_IMPORT_RULES.normalize(t.name)));
+  const pending=recommendedTypes.filter(([name])=>!old.has(HSN_IMPORT_RULES.normalize(name)));
+  if(!pending.length){notice('Todos os tipos sugeridos já estão cadastrados.');return;}
+  if(!confirm('Adicionar '+pending.length+' tipos de conta sugeridos?\n\n'+pending.map(x=>'• '+x[0]).join('\n')+'\n\nNenhum cadastro atual será alterado. Depois você poderá editar ou excluir os novos tipos.'))return;
+  const errors=[];let created=0;
+  for(const [name,color] of pending){try{const updated=check(await db.from('account_types').select('id,name').eq('owner_id',user.id));if(updated.some(t=>HSN_IMPORT_RULES.normalize(t.name)===HSN_IMPORT_RULES.normalize(name)))continue;check(await db.from('account_types').insert({owner_id:user.id,name,color}));created++;}catch(e){errors.push(name+': '+e.message);}}
+  await load();notice(created+' tipo(s) cadastrado(s). '+(errors.length?errors.length+' falha(s): '+errors.slice(0,2).join(' | '):'Você pode editar os nomes e as cores.'),errors.length>0);
+ });
+}
 const supplierFields=[['legal_name','Razão social / nome completo',true],['trade_name','Nome fantasia'],['tax_id','CNPJ / CPF (opcional)'],['service_type','Tipo de serviço'],['postal_code','CEP'],['street','Logradouro'],['address_number','Número'],['complement','Complemento'],['neighborhood','Bairro'],['city','Cidade'],['state','UF'],['bank','Banco'],['bank_branch','Agência'],['bank_account','Conta'],['pix_key','Chave PIX'],['notes','Observações']];
+const recordSearchIndex=new WeakMap();
 let db=null,user=null,view=HSN_PUSH.initialView(),rows=[],templates=[],editing=null,waSupplier=null,busy=false,loadToken=0,installPrompt=null;
 function notice(message='',error=false){$('notice').textContent=message;$('notice').className=error?'error':'';}
 function connected(){ $('connection').textContent=navigator.onLine?'Conectado · dados no Supabase':'Sem internet · conecte-se para consultar ou salvar'; }
@@ -22,6 +44,8 @@ async function acceptSession(session){
 }
 async function load(){
  loadToken++;
+ if(view==='sicoob_collections'){if(user)HSN_SICOOB.load();return;}
+ if(view==='zoho_connect'){if(user)HSN_ZOHO.show();return;}
  if(window.HSN_FINANCE?.handles(view))return HSN_FINANCE.load(view);
  if(!user)return;const token=++loadToken;const current=view;$('records').replaceChildren(el('p','Carregando…'));
  try{requireOnline();const [a,b]=await Promise.all([db.from(current).select('*').order(current==='suppliers'?'legal_name':current==='account_types'?'name':'title'),db.from('message_templates').select('*').order('title')]);const data=check(a),messages=check(b);if(token!==loadToken||!user||current!==view)return;rows=data;templates=messages;render();}
@@ -29,10 +53,15 @@ async function load(){
 }
 function render(){
  HSN_THEME.describe(view);
+ $('search').closest('.search-wrap').hidden=false;
+ if(view==='sicoob_collections')return HSN_SICOOB.render();
+ if(view==='zoho_connect')return HSN_ZOHO.show();
  if(window.HSN_FINANCE?.handles(view))return HSN_FINANCE.render();
  $('new').hidden=false;HSN_PHASE3.clearCalendar();$('new').textContent='Novo cadastro';$('finance-controls').replaceChildren();$('summary').replaceChildren();$('calendar-board').replaceChildren();
  $('view-title').textContent=titles[view];document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
- const term=$('search').value.toLocaleLowerCase('pt-BR');const list=rows.filter(r=>JSON.stringify(r).toLocaleLowerCase('pt-BR').includes(term));$('records').replaceChildren();
+ const term=$('search').value.toLocaleLowerCase('pt-BR');const list=rows.filter(r=>{let text=recordSearchIndex.get(r);if(text===undefined){text=JSON.stringify(r).toLocaleLowerCase('pt-BR');recordSearchIndex.set(r,text);}return text.includes(term);});$('records').replaceChildren();
+ if(view==='account_types'){const help=el('section',undefined,'card full-width hsn-type-suggestions');help.append(el('h3','Tipos de conta personalizados'),el('p','Você pode editar qualquer tipo existente, adicionar novos ou incluir uma lista inicial sugerida. Nenhuma alteração ocorre sem confirmação.'));help.append(button('Adicionar tipos sugeridos',addRecommendedTypes,'primary'));$('records').append(help);}
+ if(view==='suppliers'){const help=el('section',undefined,'card full-width hsn-type-suggestions');help.append(el('h3','Fornecedores integrados ao DDA'),el('p','Beneficiários captados do DDA ficam aqui, com nome e CPF/CNPJ. Você pode corrigir os dados e reutilizar o fornecedor em novas contas a pagar.'));$('records').append(help);}
  if(!list.length){$('records').append(el('p','Nenhum cadastro encontrado.'));return;}
  list.forEach(r=>{
  const card=el('article',undefined,'record'),heading=el('h2',r.legal_name||r.name||r.title);
@@ -89,9 +118,16 @@ $('wa-contact').onchange=updateWhatsApp;
 $('wa-open').onclick=()=>{const c=waSupplier?.contacts[Number($('wa-contact').value)],info=HSN_UTILS.whatsappNumber(c?.whatsapp);if(!info.valid)return;const url='https://wa.me/'+info.number+'?text='+encodeURIComponent($('wa-text').value);window.open(url,'_blank','noopener,noreferrer');};
 $('login-form').onsubmit=event=>{event.preventDefault();operation(async()=>{if(!db)throw new Error('Confira js/config.js e a conexão com o CDN.');const data=check(await db.auth.signInWithPassword({email:HSN_CONFIG.loginEmail,password:$('password').value}));$('password').value='';await acceptSession(data.session);notice('');});};
 $('logout').onclick=()=>operation(async()=>{await HSN_PUSH.beforeLogout();check(await db.auth.signOut());resetPrivate();notice('Sessão encerrada.');});
-$('refresh').onclick=load;$('search').oninput=render;$('new').onclick=()=>openEditor();$('close-editor').onclick=()=>{if(!busy)$('editor').close();};$('edit-form').onsubmit=save;
+$('refresh').onclick=load;
+let searchRenderTimer=0;
+$('search').oninput=()=>{
+ clearTimeout(searchRenderTimer);
+ const target=view,token=loadToken;
+ searchRenderTimer=setTimeout(()=>{if(target===view&&token===loadToken)render();},120);
+};
+$('new').onclick=()=>openEditor();$('close-editor').onclick=()=>{if(!busy)$('editor').close();};$('edit-form').onsubmit=save;
 $('editor').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
-document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(busy)return;view=b.dataset.view;$('search').value='';load();});
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(busy||!user)return;view=b.dataset.view;$('search').value='';$('hsn7-search')&&($('hsn7-search').value='');window.scrollTo(0,0);load();});
 window.addEventListener('online',()=>{connected();if(user)load();});window.addEventListener('offline',()=>{connected();notice('Sem internet. Não há salvamento local de cadastros.');});
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;$('install').hidden=false;});$('install').onclick=async()=>{if(installPrompt){await installPrompt.prompt();installPrompt=null;$('install').hidden=true;}};
 async function init(){
@@ -101,6 +137,7 @@ async function init(){
  if(!window.supabase)throw new Error('Biblioteca Supabase indisponível. Conecte à internet e recarregue.');
  const cfg=window.HSN_CONFIG;if(!cfg||cfg.supabaseUrl.includes('SEU-PROJETO')||cfg.supabaseAnonKey==='SUA_ANON_KEY'||!/^([0-9a-f]{8}-)([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(cfg.ownerId))throw new Error('Configure os quatro campos de js/config.js antes de entrar.');
  db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+ window.HSN_ZOHO_CLIENT=db;
  db.auth.onAuthStateChange((event,session)=>{if(!session)resetPrivate();else if(event==='SIGNED_IN'&&user?.id!==session.user.id)setTimeout(()=>acceptSession(session).catch(failure),0);});
  const data=check(await db.auth.getSession());await acceptSession(data.session);
  }catch(e){failure(e);}

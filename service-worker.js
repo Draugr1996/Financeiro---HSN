@@ -1,17 +1,31 @@
-// Somente arquivos estáticos. Nunca cachear Auth, API, documentos ou CDN.
-const CACHE='hsn-shell-v6-layout-1';
-const SHELL=['./','./index.html','./css/style.css','./css/layout.css','./js/layout.js','./js/config.js','./js/theme.js','./js/utils.js','./js/app.js','./js/finance.js','./js/import-rules.js','./js/phase4.js','./js/planning-engine.js','./js/phase5.js','./js/push-engine.js','./js/push.js','./js/attachments.js','./js/document-parser.js','./js/ocr-reader.js','./js/document-reading.js','./js/alerts-engine.js','./js/phase3.js','./js/dates.js','./js/boletos.js','./manifest.json','./icons/icon-192.png','./icons/icon-512.png','./icons/badge-96.png'];
-self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL))));
-self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('hsn-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+// HSN 8.9 — cache de arquivos estáticos. Nunca cacheia Supabase, Auth, CDN ou anexos.
+const CACHE="hsn-shell-v23-8-9-safe-optimization";
+const STATIC=["./","./index.html","manifest.json","icons/icon-192.png","css/hsn89-optimized.css?v=8-9-20261022","js/theme.js","js/config.js","js/utils.js","js/dates.js","js/boletos.js","js/alerts-engine.js","js/phase3.js?v=8-8-20261022","js/attachments.js","js/document-parser.js","js/ocr-reader.js","js/document-reading.js","js/import-rules.js","js/phase4.js?v=8-8-20261022","js/planning-engine.js","js/phase5.js","js/push-engine.js","js/push.js","js/finance.js?v=8-9-20261022","js/zoho-connect.js?v=zoho-test-1","js/app.js?v=8-9-20261022","js/layout.js","js/sicoob-collections.js?v=sicoob-server-preview-2","js/premium-ui.js?v=premium-1","js/hsn8-shell.js?v=8-6-20261021","./icons/icon-192.png","./icons/icon-512.png","./icons/badge-96.png","./manifest.json"];
+const PRELOAD=["./","./index.html","./css/hsn89-optimized.css?v=8-9-20261022","./js/theme.js","./icons/icon-192.png"];
+const STATIC_URLS=new Set(STATIC.map(path=>new URL(path,self.registration.scope).href));
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PRELOAD))));
+self.addEventListener('activate',event=>event.waitUntil(
+ caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('hsn-shell-')&&key!==CACHE).map(key=>caches.delete(key))))
+ .then(()=>self.clients.claim())
+));
 self.addEventListener('fetch',event=>{
- const url=new URL(event.request.url);
- if(event.request.method!=='GET'||url.origin!==self.location.origin) return;
- const allowed=SHELL.map(path=>new URL(path,self.registration.scope).href);
- if(!allowed.includes(url.href)&&event.request.mode!=='navigate') return;
- event.respondWith(fetch(event.request).then(response=>{
-  if(response.ok&&allowed.includes(url.href)){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(event.request,copy)));}
-  return response;
- }).catch(async()=> (await caches.match(event.request))||(event.request.mode==='navigate'?await caches.match('./index.html'):null)||Response.error()));
+ const request=event.request,url=new URL(request.url);
+ if(request.method!=='GET'||url.origin!==self.location.origin)return;
+ if(!STATIC_URLS.has(url.href)&&request.mode!=='navigate')return;
+ event.respondWith((async()=>{
+  try{
+   const response=await fetch(request);
+   if(response.ok&&STATIC_URLS.has(url.href)){
+    const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(request,copy)));
+   }
+   return response;
+  }catch{
+   const saved=await caches.match(request);
+   if(saved)return saved;
+   if(request.mode==='navigate')return(await caches.match('./index.html'))||Response.error();
+   return Response.error();
+  }
+ })());
 });
 
 // Push contém apenas resumos; nenhum token de acesso, chave privada ou documento.

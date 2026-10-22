@@ -1,7 +1,7 @@
 /* Preferência no Supabase; cache local guarda apenas a aparência. */
 (function(root){'use strict';
 const key='hsn-ui-theme',media=matchMedia('(prefers-color-scheme: dark)');
-let mode='system',client=null,owner=null,change=0,saving=false,queued=false;
+let mode='dark',client=null,owner=null,change=0,saving=false,queued=false;
 try{const cached=localStorage.getItem(key);if(['light','dark','system'].includes(cached))mode=cached;}catch{}
 function resolved(){return mode==='system'?(media.matches?'dark':'light'):mode;}
 function apply(){const theme=resolved();document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='dark'?'#12151b':'#f5f6f8';const select=document.getElementById('theme-select'),toggle=document.getElementById('theme-toggle');if(select)select.value=mode;if(toggle){toggle.textContent=theme==='dark'?'☀ Modo claro':'☾ Modo escuro';toggle.setAttribute('aria-pressed',String(theme==='dark'));}try{localStorage.setItem(key,mode);}catch{}}
